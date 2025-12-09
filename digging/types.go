@@ -3,10 +3,11 @@ package digging
 import (
 	"fmt"
 	"os"
-	"strings"
 
 	"github.com/markkurossi/tabulate"
 )
+
+const lineLengthLimit = 90
 
 type Records struct {
 	A            []string
@@ -93,8 +94,17 @@ func (r Records) PrintAll() {
 		tab.Header("TXT (Text) Records").SetAlign(tabulate.ML)
 
 		for _, record := range r.TXT {
-			row := tab.Row()
-			row.Column(record)
+			// Handle long TXT records
+			if len(record) > lineLengthLimit {
+				row := tab.Row()
+				row.Column(record[:lineLengthLimit] + "...")
+				row = tab.Row()
+				row.Column(record[lineLengthLimit:])
+			} else {
+				row := tab.Row()
+				row.Column(record)
+			}
+
 		}
 
 		tab.Print(os.Stdout)
@@ -120,11 +130,15 @@ func (r Records) PrintAll() {
 		tab := tabulate.New(tabulate.Unicode)
 		tab.Header("DMARC Record").SetAlign(tabulate.ML)
 
-		fields := strings.Split(r.DMARC[0], ";")
-
-		for _, field := range fields {
+		// Handle long DMARC record
+		if len(r.DMARC[0]) > lineLengthLimit {
 			row := tab.Row()
-			row.Column(strings.TrimSpace(field))
+			row.Column(r.DMARC[0][:lineLengthLimit] + "...")
+			row = tab.Row()
+			row.Column(r.DMARC[0][lineLengthLimit:])
+		} else {
+			row := tab.Row()
+			row.Column(r.DMARC[0])
 		}
 
 		tab.Print(os.Stdout)
