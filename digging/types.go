@@ -9,15 +9,16 @@ import (
 )
 
 type Records struct {
-	A      []string
-	AAAA   []string
-	CNAME  []string
-	MX     []string
-	NS     []string
-	TXT    []string
-	PTR    []string
-	Domain string
-	DMARC  []string
+	A            []string
+	AAAA         []string
+	CNAME        []string
+	MX           []string
+	NS           []string
+	TXT          []string
+	PTR          []string
+	Domain       string
+	DMARC        []string
+	MTASTSRecord []string
 }
 
 func (r Records) TotalCount() int {
@@ -114,20 +115,34 @@ func (r Records) PrintAll() {
 		fmt.Println()
 	}
 
-	fmt.Println()
-
 	// DMARC TXT Record
 	if len(r.DMARC) > 0 {
 		tab := tabulate.New(tabulate.Unicode)
-		tab.Header("DMARC Records").SetAlign(tabulate.ML)
+		tab.Header("DMARC Record").SetAlign(tabulate.ML)
 
-		for _, record := range r.DMARC {
-			fields := strings.Split(record, ";")
+		fields := strings.Split(r.DMARC[0], ";")
 
-			for _, field := range fields {
-				row := tab.Row()
-				row.Column(strings.TrimSpace(field))
-			}
+		for _, field := range fields {
+			row := tab.Row()
+			row.Column(strings.TrimSpace(field))
+		}
+
+		tab.Print(os.Stdout)
+		fmt.Println()
+	}
+
+	if len(r.DMARC) > 1 {
+		fmt.Printf("Note: found %d DMARC recrods\n", len(r.DMARC))
+	}
+
+	// MTA-STST Records
+	if len(r.MTASTSRecord) > 0 {
+		tab := tabulate.New(tabulate.Unicode)
+		tab.Header("MTA-STS TXT Records").SetAlign(tabulate.ML)
+
+		for _, record := range r.MTASTSRecord {
+			row := tab.Row()
+			row.Column(record)
 		}
 
 		tab.Print(os.Stdout)
