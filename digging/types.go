@@ -39,6 +39,7 @@ func (r Records) PrintAll() {
 		}
 
 		tab.Print(os.Stdout)
+		fmt.Println()
 	}
 
 	// AAAA Records
@@ -46,12 +47,13 @@ func (r Records) PrintAll() {
 		tab := tabulate.New(tabulate.Unicode)
 		tab.Header("AAAA (Address) Records").SetAlign(tabulate.ML)
 
-		for _, record := range r.A {
+		for _, record := range r.AAAA {
 			row := tab.Row()
 			row.Column(record)
 		}
 
 		tab.Print(os.Stdout)
+		fmt.Println()
 	}
 
 	// MX Records
@@ -67,6 +69,7 @@ func (r Records) PrintAll() {
 		}
 
 		tab.Print(os.Stdout)
+		fmt.Println()
 	}
 
 	// NS Records
@@ -80,6 +83,7 @@ func (r Records) PrintAll() {
 		}
 
 		tab.Print(os.Stdout)
+		fmt.Println()
 	}
 
 	// TXT Records
@@ -93,6 +97,7 @@ func (r Records) PrintAll() {
 		}
 
 		tab.Print(os.Stdout)
+		fmt.Println()
 	}
 
 	// PTR Records
@@ -106,7 +111,10 @@ func (r Records) PrintAll() {
 		}
 
 		tab.Print(os.Stdout)
+		fmt.Println()
 	}
+
+	fmt.Println()
 
 	// DMARC TXT Record
 	if len(r.DMARC) > 0 {
@@ -123,5 +131,6 @@ func (r Records) PrintAll() {
 		}
 
 		tab.Print(os.Stdout)
+		fmt.Println()
 	}
 }
