@@ -3,6 +3,7 @@ package digging
 import (
 	"fmt"
 	"os"
+	"strings"
 
 	"github.com/markkurossi/tabulate"
 )
@@ -113,8 +114,12 @@ func (r Records) PrintAll() {
 		tab.Header("DMARC Records").SetAlign(tabulate.ML)
 
 		for _, record := range r.DMARC {
-			row := tab.Row()
-			row.Column(record)
+			fields := strings.Split(record, ";")
+
+			for _, field := range fields {
+				row := tab.Row()
+				row.Column(strings.TrimSpace(field))
+			}
 		}
 
 		tab.Print(os.Stdout)
