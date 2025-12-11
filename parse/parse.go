@@ -43,6 +43,22 @@ func ParseKeyValue(input, separator string) (KeyValue, error) {
 // SplitIntoKVFields splits the input string into key/value pairs based on the specified entrySeparator and fieldSeparator.
 // It trims leading and trailing whitespace from each entry and logs any parsing errors encountered.
 func SplitIntoKVFields(input, entrySeparator, fieldSeparator string) ([]KeyValue, error) {
+	if len(fieldSeparator) == 0 {
+		return nil, fmt.Errorf("empty field separator")
+	}
+
+	if len(entrySeparator) == 0 {
+		return nil, fmt.Errorf("empty entry separator")
+	}
+
+	if !strings.Contains(input, fieldSeparator) {
+		return nil, fmt.Errorf("separator %q not found in input %q", fieldSeparator, input)
+	}
+
+	if len(input) == 0 {
+		return nil, fmt.Errorf("empty input")
+	}
+
 	var results []KeyValue
 	entries := strings.Split(input, entrySeparator)
 
