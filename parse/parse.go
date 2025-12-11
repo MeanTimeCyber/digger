@@ -2,7 +2,6 @@ package parse
 
 import (
 	"fmt"
-	"log"
 	"strings"
 )
 
@@ -62,7 +61,7 @@ func SplitIntoKVFields(input, entrySeparator, fieldSeparator string) ([]KeyValue
 	var results []KeyValue
 	entries := strings.Split(input, entrySeparator)
 
-	for i, entry := range entries {
+	for _, entry := range entries {
 		// trim leading or trailling spaces
 		entry = strings.TrimSpace(entry)
 		entry = strings.TrimRight(entry, entrySeparator)
@@ -70,7 +69,12 @@ func SplitIntoKVFields(input, entrySeparator, fieldSeparator string) ([]KeyValue
 		value, err := ParseKeyValue(entry, fieldSeparator)
 
 		if err != nil {
-			log.Printf("Failed to parse key/value from entry %d (%q): %s", i, entry, err.Error())
+			//log.Printf("Failed to parse key/value from entry %d (%q): %s", i, entry, err.Error())
+			continue
+		}
+
+		if len(value.Key) == 0 || len(value.Value) == 0 {
+			//log.Printf("Skipping empty key or value from entry %d (%q)", i, entry)
 			continue
 		}
 
