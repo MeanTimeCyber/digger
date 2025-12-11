@@ -9,12 +9,14 @@ import (
 	"github.com/markkurossi/tabulate"
 )
 
+// PrintAll prints all DNS records in formatted tables.
 func (r Records) PrintAll() {
 	fmt.Printf("Records for %q\n\n", r.Domain)
 
 	// A Records
 	if len(r.A) > 0 {
-		fmt.Println("A (Address) Records")
+		fmt.Println("======================================")
+		fmt.Println("A (IPv4 Address) Records")
 		fmt.Printf("======================================\n\n")
 
 		tab := tabulate.New(tabulate.Unicode)
@@ -31,7 +33,8 @@ func (r Records) PrintAll() {
 
 	// AAAA Records
 	if len(r.AAAA) > 0 {
-		fmt.Println("AAAA (Address) Records")
+		fmt.Println("======================================")
+		fmt.Println("AAAA (IPv6 Address) Records")
 		fmt.Printf("======================================\n\n")
 
 		tab := tabulate.New(tabulate.Unicode)
@@ -48,6 +51,7 @@ func (r Records) PrintAll() {
 
 	// MX Records
 	if len(r.MX) > 0 {
+		fmt.Println("======================================")
 		fmt.Println("MX (Mail Exchange) Records")
 		fmt.Printf("======================================\n\n")
 
@@ -67,7 +71,8 @@ func (r Records) PrintAll() {
 
 	// NS Records
 	if len(r.NS) > 0 {
-		fmt.Println("NS (Name Server)")
+		fmt.Println("======================================")
+		fmt.Println("NS (Name Server) Records")
 		fmt.Printf("======================================\n\n")
 
 		tab := tabulate.New(tabulate.Unicode)
@@ -86,6 +91,7 @@ func (r Records) PrintAll() {
 	spfRecord := ""
 
 	if len(r.TXT) > 0 {
+		fmt.Println("======================================")
 		fmt.Println("TXT (Text) Records")
 		fmt.Printf("======================================\n\n")
 
@@ -115,6 +121,7 @@ func (r Records) PrintAll() {
 
 	// PTR Records
 	if len(r.PTR) > 0 {
+		fmt.Println("======================================")
 		fmt.Println("PTR (Pointer) Records")
 		fmt.Printf("======================================\n\n")
 
@@ -132,6 +139,7 @@ func (r Records) PrintAll() {
 
 	// Print SPF Record separately if found
 	if len(spfRecord) > 0 {
+		fmt.Println("======================================")
 		fmt.Println("SPF Record")
 		fmt.Printf("======================================\n\n")
 		fmt.Printf("Raw SPF record: %q\n\n", spfRecord)
@@ -175,6 +183,7 @@ func (r Records) PrintAll() {
 	}
 
 	if len(r.DMARC) > 0 {
+		fmt.Println("======================================")
 		fmt.Println("DMARC Record")
 		fmt.Printf("======================================\n\n")
 		fmt.Printf("Raw DMARC record: %q\n\n", r.DMARC[0])
@@ -219,6 +228,7 @@ func (r Records) PrintAll() {
 
 	// MTA-STS Records
 	if len(r.MTASTSRecord) > 0 {
+		fmt.Println("======================================")
 		fmt.Println("MTA-STS Record")
 		fmt.Printf("======================================\n\n")
 
