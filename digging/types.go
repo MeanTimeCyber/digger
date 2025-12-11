@@ -3,7 +3,9 @@ package digging
 import (
 	"fmt"
 	"os"
+	"strings"
 
+	"github.com/MeanTimeCyber/digger/parse"
 	"github.com/markkurossi/tabulate"
 )
 
@@ -89,6 +91,8 @@ func (r Records) PrintAll() {
 	}
 
 	// TXT Records
+	spfRecord := ""
+
 	if len(r.TXT) > 0 {
 		tab := tabulate.New(tabulate.Unicode)
 		tab.Header("TXT (Text) Records").SetAlign(tabulate.ML)
@@ -105,6 +109,9 @@ func (r Records) PrintAll() {
 				row.Column(record)
 			}
 
+			if strings.HasPrefix(record, "v=spf1 ") {
+				spfRecord = record
+			}
 		}
 
 		tab.Print(os.Stdout)
@@ -125,20 +132,65 @@ func (r Records) PrintAll() {
 		fmt.Println()
 	}
 
+	// Print SPF Record separately if found
+	if len(spfRecord) > 0 {
+		tab := tabulate.New(tabulate.Unicode)
+		tab.Header("Field").SetAlign(tabulate.ML)
+		tab.Header("Value").SetAlign(tabulate.ML)
+
+		fields := parse.ParseIntoFields(spfRecord, " ")
+		row := tab.Row()
+		row.Column("Version")
+		row.Column(fields[0])
+
+		for i := 1; i < len(fields)-1; i++ {
+			field, err := parse.ParseKeyValue(fields[i], ":")
+
+			if err != nil {
+				continue
+			}
+
+			row := tab.Row()
+			row.Column(field.Key)
+			row.Column(field.Value)
+		}
+
+		row = tab.Row()
+		row.Column("Others")
+		row.Column(fields[len(fields)-1])
+
+		tab.Print(os.Stdout)
+		fmt.Println()
+	}
+
 	// DMARC TXT Record
 	if len(r.DMARC) > 0 {
 		tab := tabulate.New(tabulate.Unicode)
-		tab.Header("DMARC Record").SetAlign(tabulate.ML)
+		tab.Header("Field").SetAlign(tabulate.ML)
+		tab.Header("Value").SetAlign(tabulate.ML)
 
-		// Handle long DMARC record
-		if len(r.DMARC[0]) > lineLengthLimit {
-			row := tab.Row()
-			row.Column(r.DMARC[0][:lineLengthLimit] + "...")
-			row = tab.Row()
-			row.Column(r.DMARC[0][lineLengthLimit:])
+		// Parse DMARC record into key-value fields
+		fields, err := parse.SplitIntoKVFields(r.DMARC[0], ";", "=")
+
+		if err == nil {
+			for _, field := range fields {
+				row := tab.Row()
+				row.Column(field.Key)
+				row.Column(field.Value)
+			}
+
 		} else {
-			row := tab.Row()
-			row.Column(r.DMARC[0])
+			// Splitting failed, print raw DMARC record
+			// Handle long DMARC record
+			if len(r.DMARC[0]) > lineLengthLimit {
+				row := tab.Row()
+				row.Column(r.DMARC[0][:lineLengthLimit] + "...")
+				row = tab.Row()
+				row.Column(r.DMARC[0][lineLengthLimit:])
+			} else {
+				row := tab.Row()
+				row.Column(r.DMARC[0])
+			}
 		}
 
 		tab.Print(os.Stdout)
@@ -149,7 +201,7 @@ func (r Records) PrintAll() {
 		fmt.Printf("Note: found %d DMARC recrods\n", len(r.DMARC))
 	}
 
-	// MTA-STST Records
+	// MTA-STS Records
 	if len(r.MTASTSRecord) > 0 {
 		tab := tabulate.New(tabulate.Unicode)
 		tab.Header("MTA-STS TXT Records").SetAlign(tabulate.ML)
