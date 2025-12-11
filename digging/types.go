@@ -34,8 +34,11 @@ func (r Records) PrintAll() {
 
 	// A Records
 	if len(r.A) > 0 {
+		fmt.Println("A (Address) Records")
+		fmt.Printf("======================================\n\n")
+
 		tab := tabulate.New(tabulate.Unicode)
-		tab.Header("A (Address) Records").SetAlign(tabulate.ML)
+		tab.Header("Address").SetAlign(tabulate.ML)
 
 		for _, record := range r.A {
 			row := tab.Row()
@@ -48,8 +51,11 @@ func (r Records) PrintAll() {
 
 	// AAAA Records
 	if len(r.AAAA) > 0 {
+		fmt.Println("AAAA (Address) Records")
+		fmt.Printf("======================================\n\n")
+
 		tab := tabulate.New(tabulate.Unicode)
-		tab.Header("AAAA (Address) Records").SetAlign(tabulate.ML)
+		tab.Header("Address").SetAlign(tabulate.ML)
 
 		for _, record := range r.AAAA {
 			row := tab.Row()
@@ -62,9 +68,12 @@ func (r Records) PrintAll() {
 
 	// MX Records
 	if len(r.MX) > 0 {
+		fmt.Println("MX (Mail Exchange) Records")
+		fmt.Printf("======================================\n\n")
+
 		tab := tabulate.New(tabulate.Unicode)
 		tab.Header("Preference").SetAlign(tabulate.MC)
-		tab.Header("MX (Email Server) Records").SetAlign(tabulate.ML)
+		tab.Header("Email Server").SetAlign(tabulate.ML)
 
 		for i, record := range r.MX {
 			row := tab.Row()
@@ -78,8 +87,11 @@ func (r Records) PrintAll() {
 
 	// NS Records
 	if len(r.NS) > 0 {
+		fmt.Println("NS (Name Server)")
+		fmt.Printf("======================================\n\n")
+
 		tab := tabulate.New(tabulate.Unicode)
-		tab.Header("NS (Name Server) Records").SetAlign(tabulate.MC)
+		tab.Header("Name server").SetAlign(tabulate.MC)
 
 		for _, record := range r.NS {
 			row := tab.Row()
@@ -94,8 +106,11 @@ func (r Records) PrintAll() {
 	spfRecord := ""
 
 	if len(r.TXT) > 0 {
+		fmt.Println("TXT (Text) Records")
+		fmt.Printf("======================================\n\n")
+		
 		tab := tabulate.New(tabulate.Unicode)
-		tab.Header("TXT (Text) Records").SetAlign(tabulate.ML)
+		tab.Header("Record").SetAlign(tabulate.ML)
 
 		for _, record := range r.TXT {
 			// Handle long TXT records
@@ -120,8 +135,11 @@ func (r Records) PrintAll() {
 
 	// PTR Records
 	if len(r.PTR) > 0 {
+		fmt.Println("PTR (Pointer) Records")
+		fmt.Printf("======================================\n\n")
+
 		tab := tabulate.New(tabulate.Unicode)
-		tab.Header("PTR (Pointer) Records").SetAlign(tabulate.ML)
+		tab.Header("Pointer").SetAlign(tabulate.ML)
 
 		for _, record := range r.PTR {
 			row := tab.Row()
@@ -134,6 +152,10 @@ func (r Records) PrintAll() {
 
 	// Print SPF Record separately if found
 	if len(spfRecord) > 0 {
+		fmt.Println("SPF Record")
+		fmt.Printf("======================================\n\n")
+		fmt.Printf("Raw SPF record: %q\n\n", spfRecord)
+
 		tab := tabulate.New(tabulate.Unicode)
 		tab.Header("Field").SetAlign(tabulate.ML)
 		tab.Header("Value").SetAlign(tabulate.ML)
@@ -156,7 +178,7 @@ func (r Records) PrintAll() {
 		}
 
 		row = tab.Row()
-		row.Column("Others")
+		row.Column("All other mechanisms")
 		row.Column(fields[len(fields)-1])
 
 		tab.Print(os.Stdout)
@@ -164,7 +186,15 @@ func (r Records) PrintAll() {
 	}
 
 	// DMARC TXT Record
+	if len(r.DMARC) > 1 {
+		fmt.Printf("Note: found %d DMARC records\n", len(r.DMARC))
+	}
+
 	if len(r.DMARC) > 0 {
+		fmt.Println("DMARC Record")
+		fmt.Printf("======================================\n\n")
+		fmt.Printf("Raw DMARC record: %q\n\n", r.DMARC[0])
+
 		tab := tabulate.New(tabulate.Unicode)
 		tab.Header("Field").SetAlign(tabulate.ML)
 		tab.Header("Value").SetAlign(tabulate.ML)
@@ -203,6 +233,9 @@ func (r Records) PrintAll() {
 
 	// MTA-STS Records
 	if len(r.MTASTSRecord) > 0 {
+		fmt.Println("MTA-STS Record")
+		fmt.Printf("======================================\n\n")
+
 		tab := tabulate.New(tabulate.Unicode)
 		tab.Header("MTA-STS TXT Records").SetAlign(tabulate.ML)
 
