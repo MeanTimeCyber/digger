@@ -14,7 +14,12 @@ type Records struct {
 	PTR          []string
 	Domain       string
 	DMARC        []string
-	MTASTSRecord []string
+	MTASTSRecord MTARecords
+}
+
+type MTARecords struct {
+	TXT string
+	TLSRPT string
 }
 
 // TotalCount returns the total number of DNS records across all types.

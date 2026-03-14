@@ -56,15 +56,20 @@ func LookupAll(domain string) (*Records, error) {
 		return nil, fmt.Errorf("could not query TXT for %q: %w", mtaSTSPath, err)
 	}
 
-	records.MTASTSRecord = mtaSTSresult.TXT
-
+	if len(mtaSTSresult.TXT) > 0 {
+		records.MTASTSRecord.TXT = mtaSTSresult.TXT[0]
+	}
+	
+	// Lookup TLS Report
 	mtaSTSresult, err = txtClient.QueryOne(tlsRPTPath)
 
 	if err != nil {
 		return nil, fmt.Errorf("could not query TXT for %q: %w", tlsRPTPath, err)
 	}
 
-	records.MTASTSRecord = append(records.MTASTSRecord, mtaSTSresult.TXT...)
+	if len(mtaSTSresult.TXT) > 0 {
+		records.MTASTSRecord.TLSRPT = mtaSTSresult.TXT[0]
+	}
 
 	// Return records
 	return &records, nil
