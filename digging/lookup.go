@@ -3,8 +3,8 @@ package digging
 import (
 	"fmt"
 	"io"
-   "net/http"
-   "strings"
+	"net/http"
+	"strings"
 )
 
 func LookupAll(domain string) (*Records, error) {
@@ -72,7 +72,7 @@ func LookupAll(domain string) (*Records, error) {
 
 		records.MTASTSRecord.Policy = policy
 	}
-	
+
 	// Lookup TLS Report
 	mtaSTSresult, err = txtClient.QueryOne(tlsRPTPath)
 
@@ -88,7 +88,6 @@ func LookupAll(domain string) (*Records, error) {
 	return &records, nil
 }
 
-
 // get the MTA Policy file via HTTP
 func getMTAPolicy(domain string) (string, error) {
 	url := fmt.Sprintf("https://mta-sts.%s/.well-known/mta-sts.txt", domain)
@@ -99,13 +98,12 @@ func getMTAPolicy(domain string) (string, error) {
 	}
 
 	body, err := io.ReadAll(resp.Body)
-   
+
 	if err != nil {
-      return "", fmt.Errorf("error parsing MTA-STS policy: %s", err)
+		return "", fmt.Errorf("error parsing MTA-STS policy: %s", err)
 	}
 
-   sb := strings.TrimSpace(string(body))
-   fmt.Printf(sb)
+	sb := strings.TrimSpace(string(body))
 
-   return sb, nil
+	return sb, nil
 }
