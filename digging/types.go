@@ -20,6 +20,7 @@ type Records struct {
 type MTARecords struct {
 	TXT string
 	TLSRPT string
+	Policy string
 }
 
 // TotalCount returns the total number of DNS records across all types.

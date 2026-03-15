@@ -242,6 +242,18 @@ func (r Records) PrintAll() {
 		row.Column("TXT Record")
 		row.Column(r.MTASTSRecord.TXT)
 
+		lines := strings.Split(r.MTASTSRecord.Policy, "\n")
+
+			for _, line := range lines {
+				field, err := parse.ParseKeyValue(line, ":")
+
+				if err == nil {
+					row := tab.Row()
+					row.Column(fmt.Sprintf("Policy %s", field.Key))
+					row.Column(field.Value)
+				}
+			}
+
 		if len(r.MTASTSRecord.TLSRPT) > 0 {
 			row := tab.Row()
 			row.Column("TLS Report")
