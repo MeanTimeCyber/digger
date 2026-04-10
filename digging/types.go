@@ -2,7 +2,7 @@ package digging
 
 import "strings"
 
-const lineLengthLimit = 90
+const lineLengthLimit = 80
 
 type Records struct {
 	A            []string

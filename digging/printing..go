@@ -11,7 +11,6 @@ import (
 
 // PrintAll prints all DNS records in formatted tables.
 func (r Records) PrintAll() {
-	fmt.Printf("Records for %q\n\n", r.Domain)
 
 	// A Records
 	if len(r.A) > 0 {
@@ -99,18 +98,27 @@ func (r Records) PrintAll() {
 		for i, record := range r.TXT {
 
 			// Handle long TXT records
-			if len(record) > lineLengthLimit {
-				
+			row := tab.Row()
+			row.Column(fmt.Sprintf("%d", i+1))
 
-				row := tab.Row()
-				row.Column(fmt.Sprintf("%d", i+1))
-				row.Column(record[:lineLengthLimit] + "...")
-				row.Column(fmt.Sprintf("%d...", i+1))
-				row = tab.Row()
-				row.Column(record[lineLengthLimit:])
+			// Break long records into multiple rows
+			if len(record) > lineLengthLimit {
+				row.Column(record[:lineLengthLimit])
+				// Add continuation rows for the remainder
+				remaining := record[lineLengthLimit:]
+				for len(remaining) > 0 {
+					row = tab.Row()
+					if len(remaining) > lineLengthLimit {
+						row.Column("")
+						row.Column(remaining[:lineLengthLimit])
+						remaining = remaining[lineLengthLimit:]
+					} else {
+						row.Column("")
+						row.Column(remaining)
+						remaining = ""
+					}
+				}
 			} else {
-				row := tab.Row()
-				row.Column(fmt.Sprintf("%d", i+1))
 				row.Column(record)
 			}
 
@@ -209,15 +217,30 @@ func (r Records) PrintAll() {
 
 		} else {
 			// Splitting failed, print raw DMARC record
-			// Handle long DMARC record
-			if len(r.DMARC[0]) > lineLengthLimit {
-				row := tab.Row()
-				row.Column(r.DMARC[0][:lineLengthLimit] + "...")
-				row = tab.Row()
-				row.Column(r.DMARC[0][lineLengthLimit:])
+			row := tab.Row()
+			row.Column("(raw)")
+			row.Column("(unparseable)")
+
+			// Break long record into multiple rows
+			dmarc := r.DMARC[0]
+			if len(dmarc) > lineLengthLimit {
+				row.Column(dmarc[:lineLengthLimit])
+				// Add continuation rows for the remainder
+				remaining := dmarc[lineLengthLimit:]
+				for len(remaining) > 0 {
+					row = tab.Row()
+					row.Column("")
+					row.Column("")
+					if len(remaining) > lineLengthLimit {
+						row.Column(remaining[:lineLengthLimit])
+						remaining = remaining[lineLengthLimit:]
+					} else {
+						row.Column(remaining)
+						remaining = ""
+					}
+				}
 			} else {
-				row := tab.Row()
-				row.Column(r.DMARC[0])
+				row.Column(dmarc)
 			}
 		}
 
@@ -244,21 +267,21 @@ func (r Records) PrintAll() {
 
 		lines := strings.Split(r.MTASTSRecord.Policy, "\n")
 
-			for _, line := range lines {
-				field, err := parse.ParseKeyValue(line, ":")
+		for _, line := range lines {
+			field, err := parse.ParseKeyValue(line, ":")
 
-				if err == nil {
-					row := tab.Row()
-					row.Column(fmt.Sprintf("Policy %s", field.Key))
-					row.Column(field.Value)
-				}
+			if err == nil {
+				row := tab.Row()
+				row.Column(fmt.Sprintf("Policy %s", field.Key))
+				row.Column(field.Value)
 			}
+		}
 
 		if len(r.MTASTSRecord.TLSRPT) > 0 {
 			row := tab.Row()
 			row.Column("TLS Report")
 			row.Column(r.MTASTSRecord.TLSRPT)
-		} 
+		}
 
 		tab.Print(os.Stdout)
 		fmt.Println()
