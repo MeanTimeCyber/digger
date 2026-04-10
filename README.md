@@ -103,4 +103,4 @@ Fin.
 ```
 
 # Building and Running
-Just run `Make` to build a binary, or `go run cli\main.go` to just run it.
+Just run `Make` to build a binary, or `go run cli\main.go` to just run it. Give it a target domain with `-i`.
