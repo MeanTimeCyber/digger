@@ -4,8 +4,28 @@ A Go command line tool that does a lot of digging...find and print all common DN
 ```
 $ go run cli/main.go -i meantimecyber.com
 Looking up domain: "meantimecyber.com"
-Got 5 records for domain "meantimecyber.com"
-Records for "meantimecyber.com":
+Got 9 records for domain "meantimecyber.com":
+Records for "meantimecyber.com"
+
+A (IPv4 Address) Records
+-----------------------------
+
+┏━━━━━━━━━━━━━━━┓
+┃ Address       ┃
+┡━━━━━━━━━━━━━━━┩
+│ 104.21.7.12   │
+│ 172.67.155.92 │
+└───────────────┘
+
+AAAA (IPv6 Address) Records
+-----------------------------
+
+┏━━━━━━━━━━━━━━━━━━━━━━━━━━━┓
+┃ Address                   ┃
+┡━━━━━━━━━━━━━━━━━━━━━━━━━━━┩
+│ 2606:4700:3034::ac43:9b5c │
+│ 2606:4700:3031::6815:70c  │
+└───────────────────────────┘
 
 MX (Mail Exchange) Records
 -----------------------------
@@ -22,8 +42,8 @@ NS (Name Server) Records
 ┏━━━━━━━━┳━━━━━━━━━━━━━━━━━━━━━━━━━━┓
 ┃ Record ┃ Name server              ┃
 ┡━━━━━━━━╇━━━━━━━━━━━━━━━━━━━━━━━━━━┩
-│ 1      │ apollo.ns.cloudflare.com │
-│ 2      │ amanda.ns.cloudflare.com │
+│ 1      │ amanda.ns.cloudflare.com │
+│ 2      │ apollo.ns.cloudflare.com │
 └────────┴──────────────────────────┘
 
 TXT (Text) Records
@@ -81,7 +101,6 @@ MTA-STS Record
 Fin.
 
 ```
-
 
 # Building and Running
 Just run `Make` to build a binary, or `go run cli\main.go` to just run it.
