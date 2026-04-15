@@ -14,7 +14,9 @@ import (
 
 func main() {
 	var domain string
+	var markdown bool
 	flag.StringVar(&domain, "i", "", "Input domain to look up")
+	flag.BoolVar(&markdown, "m", false, "Also write output to a markdown file")
 	flag.Parse()
 
 	// check arg
@@ -30,14 +32,13 @@ func main() {
 		os.Exit(-1)
 	}
 
-
 	// lookup all records for the domain
-	lookupDomain(domain)
+	lookupDomain(domain, markdown)
 
 	fmt.Println("Fin.")
 }
 
-func lookupDomain(domain string) {
+func lookupDomain(domain string, markdown bool) {
 	// get the host, in case we have a path
 	host, _ := getHostFromURL(domain)
 
@@ -52,6 +53,16 @@ func lookupDomain(domain string) {
 
 	fmt.Printf("Got %d records for domain %q:\n", records.TotalCount(), domain)
 	records.PrintAll()
+
+	if markdown {
+		markdownFile, err := records.WriteMarkdown()
+		if err != nil {
+			fmt.Printf("Error writing markdown output for %q: %s\n", domain, err.Error())
+			os.Exit(-1)
+		}
+
+		fmt.Printf("Saved markdown output to %q\n", markdownFile)
+	}
 }
 
 func getHostFromURL(line string) (string, error) {
