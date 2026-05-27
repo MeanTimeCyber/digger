@@ -40,6 +40,27 @@ func writeMarkdownTable(builder *strings.Builder, headers []string, rows [][]str
 	builder.WriteString("\n")
 }
 
+func splitLongValue(value string, limit int) []string {
+	if len(value) <= limit {
+		return []string{value}
+	}
+
+	parts := make([]string, 0, (len(value)/limit)+1)
+	remaining := value
+	for len(remaining) > 0 {
+		if len(remaining) > limit {
+			parts = append(parts, remaining[:limit])
+			remaining = remaining[limit:]
+			continue
+		}
+
+		parts = append(parts, remaining)
+		break
+	}
+
+	return parts
+}
+
 // WriteMarkdown saves all DNS records in Markdown tables and returns the created filename.
 func (r Records) WriteMarkdown() (string, error) {
 	var sb strings.Builder
@@ -132,12 +153,14 @@ func (r Records) WriteMarkdown() (string, error) {
 		writeMarkdownTable(&sb, []string{"Key", "Field", "Value"}, rows)
 	}
 
-	if len(r.DMARC) > 1 {
-		sb.WriteString(fmt.Sprintf("Note: found %d DMARC records\n\n", len(r.DMARC)))
-	}
-
 	if len(r.DMARC) > 0 {
 		sb.WriteString("## DMARC Record\n\n")
+
+		// flag if we have more than 1 DMARC record, which is a misconfiguration that can cause email delivery issues
+		if len(r.DMARC) > 1 {
+			sb.WriteString(fmt.Sprintf("Note: found %d DMARC records\n\n", len(r.DMARC)))
+		}
+
 		sb.WriteString("Raw DMARC record: `")
 		sb.WriteString(r.DMARC[0])
 		sb.WriteString("`\n\n")
@@ -274,30 +297,16 @@ func (r Records) PrintAll() {
 		tab.Header("Value").SetAlign(tabulate.ML)
 
 		for i, record := range r.TXT {
+			parts := splitLongValue(record, lineLengthLimit)
 
-			// Handle long TXT records
 			row := tab.Row()
 			row.Column(fmt.Sprintf("%d", i+1))
+			row.Column(parts[0])
 
-			// Break long records into multiple rows
-			if len(record) > lineLengthLimit {
-				row.Column(record[:lineLengthLimit])
-				// Add continuation rows for the remainder
-				remaining := record[lineLengthLimit:]
-				for len(remaining) > 0 {
-					row = tab.Row()
-					if len(remaining) > lineLengthLimit {
-						row.Column("")
-						row.Column(remaining[:lineLengthLimit])
-						remaining = remaining[lineLengthLimit:]
-					} else {
-						row.Column("")
-						row.Column(remaining)
-						remaining = ""
-					}
-				}
-			} else {
-				row.Column(record)
+			for _, part := range parts[1:] {
+				row = tab.Row()
+				row.Column("")
+				row.Column(part)
 			}
 
 			if strings.HasPrefix(record, "v=spf1 ") {
@@ -395,30 +404,18 @@ func (r Records) PrintAll() {
 
 		} else {
 			// Splitting failed, print raw DMARC record
+			parts := splitLongValue(r.DMARC[0], lineLengthLimit)
+
 			row := tab.Row()
 			row.Column("(raw)")
 			row.Column("(unparseable)")
+			row.Column(parts[0])
 
-			// Break long record into multiple rows
-			dmarc := r.DMARC[0]
-			if len(dmarc) > lineLengthLimit {
-				row.Column(dmarc[:lineLengthLimit])
-				// Add continuation rows for the remainder
-				remaining := dmarc[lineLengthLimit:]
-				for len(remaining) > 0 {
-					row = tab.Row()
-					row.Column("")
-					row.Column("")
-					if len(remaining) > lineLengthLimit {
-						row.Column(remaining[:lineLengthLimit])
-						remaining = remaining[lineLengthLimit:]
-					} else {
-						row.Column(remaining)
-						remaining = ""
-					}
-				}
-			} else {
-				row.Column(dmarc)
+			for _, part := range parts[1:] {
+				row = tab.Row()
+				row.Column("")
+				row.Column("")
+				row.Column(part)
 			}
 		}
 
