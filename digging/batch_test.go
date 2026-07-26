@@ -5,7 +5,29 @@ import (
 	"sync/atomic"
 	"testing"
 	"time"
+
+	"github.com/projectdiscovery/dnsx/libs/dnsx"
 )
+
+func TestLookupAllRecordsForDomainsClientSetupFailure(t *testing.T) {
+	oldFactory := defaultBatchClientFactory
+	defaultBatchClientFactory = func() (*dnsx.DNSX, error) {
+		return nil, errors.New("boom")
+	}
+	t.Cleanup(func() {
+		defaultBatchClientFactory = oldFactory
+	})
+
+	results, err := LookupAllRecordsForDomains([]string{"example.com"}, BatchLookupOptions{})
+
+	if err == nil {
+		t.Fatal("expected client setup to fail")
+	}
+
+	if results != nil {
+		t.Fatalf("expected no results on setup failure, got %#v", results)
+	}
+}
 
 func TestLookupAllRecordsForDomainsCapsConcurrency(t *testing.T) {
 	domains := []string{"a.example", "b.example", "c.example", "d.example"}

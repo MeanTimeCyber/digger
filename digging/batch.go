@@ -6,6 +6,8 @@ import (
 	"time"
 )
 
+var defaultBatchClientFactory = getDefaultClient
+
 const defaultMaxConcurrentLookups = 4               // Default maximum number of lookups to run at once
 const defaultStartInterval = 250 * time.Millisecond // Default delay between starting each lookup
 const defaultLookupTimeout = 15 * time.Second       // Default per-domain timeout for batch lookups
@@ -38,7 +40,7 @@ type lookupAllRecordsFunc func(string) (*Records, error)
 
 // LookupAllRecordsForDomains looks up all DNS records for the provided domains using the specified options.
 func LookupAllRecordsForDomains(domains []string, opts BatchLookupOptions) ([]DomainLookupResult, error) {
-	client, err := getDefaultClient()
+	client, err := defaultBatchClientFactory()
 	if err != nil {
 		return nil, fmt.Errorf("could not create DNS client: %w", err)
 	}

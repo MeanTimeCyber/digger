@@ -7,9 +7,26 @@ import (
 	"strings"
 
 	"github.com/projectdiscovery/dnsx/libs/dnsx"
+	retryabledns "github.com/projectdiscovery/retryabledns"
 )
 
+var httpGetFunc = http.Get
+
 func LookupAllRecordsForDomain(domain string, client *dnsx.DNSX) (*Records, error) {
+	return lookupAllRecordsForDomain(domain, client, client, getMTAPolicy)
+}
+
+type queryMultipleClient interface {
+	QueryMultiple(string) (*retryabledns.DNSData, error)
+}
+
+type queryOneClient interface {
+	QueryOne(string) (*retryabledns.DNSData, error)
+}
+
+type policyFetcher func(string) (string, error)
+
+func lookupAllRecordsForDomain(domain string, queryClient queryMultipleClient, txtClient queryOneClient, fetchPolicy policyFetcher) (*Records, error) {
 	records := Records{
 		Domain: domain,
 	}
@@ -17,16 +34,24 @@ func LookupAllRecordsForDomain(domain string, client *dnsx.DNSX) (*Records, erro
 	// if no client is provided, create a new one
 	var err error
 
-	if client == nil {
-		client, err = getDefaultClient()
+	if queryClient == nil {
+		queryClient, err = getDefaultClient()
 
 		if err != nil {
 			return nil, fmt.Errorf("could not create DNS client: %w", err)
 		}
 	}
 
+	if txtClient == nil {
+		txtClient, err = getTXTClient()
+
+		if err != nil {
+			return nil, fmt.Errorf("could not create TXT DNS client: %w", err)
+		}
+	}
+
 	// Lookup all records
-	queryResult, err := client.QueryMultiple(domain)
+	queryResult, err := queryClient.QueryMultiple(domain)
 
 	if err != nil {
 		return nil, fmt.Errorf("could not query domain %q: %w", domain, err)
@@ -39,13 +64,6 @@ func LookupAllRecordsForDomain(domain string, client *dnsx.DNSX) (*Records, erro
 	records.NS = queryResult.NS
 	records.TXT = queryResult.TXT
 	records.PTR = queryResult.PTR
-
-	// Lookup CNAME record separately
-	txtClient, err := getTXTClient()
-
-	if err != nil {
-		return nil, fmt.Errorf("could not create TXT DNS client: %w", err)
-	}
 
 	dmarcPath := "_dmarc." + domain
 	cnameResult, err := txtClient.QueryOne(dmarcPath)
@@ -71,7 +89,7 @@ func LookupAllRecordsForDomain(domain string, client *dnsx.DNSX) (*Records, erro
 		records.MTASTSRecord.TXT = mtaSTSresult.TXT[0]
 
 		// get the policy file
-		policy, err := getMTAPolicy(domain)
+		policy, err := fetchPolicy(domain)
 
 		if err != nil {
 			return nil, err
@@ -98,11 +116,12 @@ func LookupAllRecordsForDomain(domain string, client *dnsx.DNSX) (*Records, erro
 // get the MTA Policy file via HTTP
 func getMTAPolicy(domain string) (string, error) {
 	url := fmt.Sprintf("https://mta-sts.%s/.well-known/mta-sts.txt", domain)
-	resp, err := http.Get(url)
+	resp, err := httpGetFunc(url)
 
 	if err != nil {
 		return "", fmt.Errorf("error getting MTA-STS policy: %s", err)
 	}
+	defer resp.Body.Close()
 
 	body, err := io.ReadAll(resp.Body)
 
