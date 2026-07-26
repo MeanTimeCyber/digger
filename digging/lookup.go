@@ -5,17 +5,24 @@ import (
 	"io"
 	"net/http"
 	"strings"
+
+	"github.com/projectdiscovery/dnsx/libs/dnsx"
 )
 
-func LookupAll(domain string) (*Records, error) {
+func LookupAllRecordsForDomain(domain string, client *dnsx.DNSX) (*Records, error) {
 	records := Records{
 		Domain: domain,
 	}
 
-	client, err := getDefaultClient()
+	// if no client is provided, create a new one
+	var err error
 
-	if err != nil {
-		return nil, fmt.Errorf("could not create DNS client: %w", err)
+	if client == nil {
+		client, err = getDefaultClient()
+
+		if err != nil {
+			return nil, fmt.Errorf("could not create DNS client: %w", err)
+		}
 	}
 
 	// Lookup all records

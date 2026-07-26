@@ -7,62 +7,101 @@ import (
 	"net/url"
 	"os"
 	"strings"
+	"time"
 
 	"github.com/MeanTimeCyber/digger/digging"
 	"github.com/asaskevich/govalidator"
 )
 
 func main() {
-	var domain string
+	var domains domainList
 	var markdown bool
-	flag.StringVar(&domain, "i", "", "Input domain to look up")
+	var maxConcurrentLookups int
+	var startInterval time.Duration
+	flag.Var(&domains, "i", "Input domain to look up (repeat the flag or separate values with commas)")
 	flag.BoolVar(&markdown, "m", false, "Also write output to a markdown file")
+	flag.IntVar(&maxConcurrentLookups, "c", 4, "Maximum number of lookups to run at once")
+	flag.DurationVar(&startInterval, "interval", 250*time.Millisecond, "Delay between starting each lookup")
 	flag.Parse()
 
-	// check arg
-	if domain == "" {
-		fmt.Println("No domain provided. Use -i to specify a domain.")
+	if len(domains) == 0 {
+		fmt.Println("No domain provided. Use -i to specify one or more domains.")
 		flag.Usage()
 		os.Exit(-1)
 	}
 
-	// check the domain
-	if !govalidator.IsDNSName(domain) {
-		fmt.Printf("%s is not a valid domain\n", domain)
-		os.Exit(-1)
-	}
-
-	// lookup all records for the domain
-	lookupDomain(domain, markdown)
+	lookupDomains(domains, markdown, maxConcurrentLookups, startInterval)
 
 	fmt.Println("Fin.")
 }
 
-func lookupDomain(domain string, markdown bool) {
-	// get the host, in case we have a path
-	host, _ := getHostFromURL(domain)
+func lookupDomains(domains []string, markdown bool, maxConcurrentLookups int, startInterval time.Duration) {
+	cleanedDomains := make([]string, 0, len(domains))
+	for _, domain := range domains {
+		host, _ := getHostFromURL(domain)
 
-	fmt.Printf("Looking up domain: %q\n", host)
+		if !govalidator.IsDNSName(host) {
+			fmt.Printf("%s is not a valid domain\n", domain)
+			continue
+		}
 
-	records, err := digging.LookupAll(domain)
+		cleanedDomains = append(cleanedDomains, host)
+	}
 
-	if err != nil {
-		fmt.Printf("Error looking up domain %q: %s", domain, err.Error())
+	if len(cleanedDomains) == 0 {
 		os.Exit(-1)
 	}
 
-	fmt.Printf("Got %d records for domain %q:\n", records.TotalCount(), domain)
-	records.PrintAll()
+	results, err := digging.LookupAllRecordsForDomains(cleanedDomains, digging.BatchLookupOptions{
+		MaxConcurrentLookups: maxConcurrentLookups,
+		StartInterval:        startInterval,
+	})
+	if err != nil {
+		fmt.Printf("Error setting up batch lookup: %s\n", err.Error())
+		os.Exit(-1)
+	}
 
-	if markdown {
-		markdownFile, err := records.WriteMarkdown()
-		if err != nil {
-			fmt.Printf("Error writing markdown output for %q: %s\n", domain, err.Error())
-			os.Exit(-1)
+	for _, result := range results {
+		if result.Err != nil {
+			fmt.Printf("Error looking up domain %q: %s\n", result.Domain, result.Err.Error())
+			continue
 		}
 
-		fmt.Printf("Saved markdown output to %q\n", markdownFile)
+		fmt.Printf("Looking up domain: %q\n", result.Domain)
+
+		records := result.Records
+		fmt.Printf("Got %d records for domain %q:\n", records.TotalCount(), result.Domain)
+		records.PrintAll()
+
+		if markdown {
+			markdownFile, err := records.WriteMarkdown()
+			if err != nil {
+				fmt.Printf("Error writing markdown output for %q: %s\n", result.Domain, err.Error())
+				os.Exit(-1)
+			}
+
+			fmt.Printf("Saved markdown output to %q\n", markdownFile)
+		}
 	}
+}
+
+type domainList []string
+
+func (d *domainList) String() string {
+	return strings.Join(*d, ",")
+}
+
+func (d *domainList) Set(value string) error {
+	for _, part := range strings.Split(value, ",") {
+		trimmed := strings.TrimSpace(part)
+		if trimmed == "" {
+			continue
+		}
+
+		*d = append(*d, trimmed)
+	}
+
+	return nil
 }
 
 func getHostFromURL(line string) (string, error) {
