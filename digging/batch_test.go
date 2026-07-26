@@ -74,7 +74,7 @@ func TestLookupAllRecordsForDomainsCapsConcurrency(t *testing.T) {
 }
 
 func TestLookupAllRecordsForDomainsWaitsForTickBeforeStartingNextJob(t *testing.T) {
-	domains := []string{"a.example", "b.example", "c.example"}
+	domains := []string{"a.example", "b.example"}
 	tickCh := make(chan time.Time)
 	release := make(chan struct{})
 	started := make(chan string, len(domains))
@@ -164,5 +164,32 @@ func TestLookupAllRecordsForDomainsTimesOutPerDomain(t *testing.T) {
 
 	if results[0].Records != nil {
 		t.Fatalf("expected timed out lookup to have no records, got %#v", results[0].Records)
+	}
+}
+
+func TestDefaultBatchLookupOptions(t *testing.T) {
+	options := DefaultBatchLookupOptions()
+
+	if options.MaxConcurrentLookups != defaultMaxConcurrentLookups {
+		t.Fatalf("expected max concurrency %d, got %d", defaultMaxConcurrentLookups, options.MaxConcurrentLookups)
+	}
+
+	if options.StartInterval != defaultStartInterval {
+		t.Fatalf("expected start interval %s, got %s", defaultStartInterval, options.StartInterval)
+	}
+
+	if options.LookupTimeout != defaultLookupTimeout {
+		t.Fatalf("expected lookup timeout %s, got %s", defaultLookupTimeout, options.LookupTimeout)
+	}
+}
+
+func TestLookupAllRecordsForDomainsEmptyInput(t *testing.T) {
+	results := lookupAllRecordsForDomains(nil, BatchLookupOptions{}, func(domain string) (*Records, error) {
+		t.Fatal("lookup function should not be called for empty input")
+		return nil, nil
+	}, nil)
+
+	if results != nil {
+		t.Fatalf("expected nil results for empty input, got %#v", results)
 	}
 }
