@@ -6,21 +6,23 @@ import (
 	"time"
 )
 
-const defaultMaxConcurrentLookups = 4
+const defaultMaxConcurrentLookups = 4 // Default maximum number of lookups to run at once
+const defaultStartInterval = 250 * time.Millisecond // Default delay between starting each lookup
 
-const defaultStartInterval = 250 * time.Millisecond
-
+// BatchLookupOptions defines the options for batch lookups.
 type BatchLookupOptions struct {
-	MaxConcurrentLookups int
-	StartInterval        time.Duration
+	MaxConcurrentLookups int // Maximum number of lookups to run at once
+	StartInterval        time.Duration // Delay between starting each lookup
 }
 
+// DomainLookupResult represents the result of looking up a domain's DNS records.
 type DomainLookupResult struct {
-	Domain  string
-	Records *Records
-	Err     error
+	Domain  string // The domain that was looked up
+	Records *Records // The DNS records for the domain
+	Err     error // Any error that occurred during the lookup
 }
 
+// DefaultBatchLookupOptions returns the default options for batch lookups.
 func DefaultBatchLookupOptions() BatchLookupOptions {
 	return BatchLookupOptions{
 		MaxConcurrentLookups: defaultMaxConcurrentLookups,
@@ -28,8 +30,10 @@ func DefaultBatchLookupOptions() BatchLookupOptions {
 	}
 }
 
+// lookupAllRecordsFunc defines the function signature for looking up all records for a domain.
 type lookupAllRecordsFunc func(string) (*Records, error)
 
+// LookupAllRecordsForDomains looks up all DNS records for the provided domains using the specified options.
 func LookupAllRecordsForDomains(domains []string, opts BatchLookupOptions) ([]DomainLookupResult, error) {
 	client, err := getDefaultClient()
 	if err != nil {
@@ -41,6 +45,7 @@ func LookupAllRecordsForDomains(domains []string, opts BatchLookupOptions) ([]Do
 	}, nil), nil
 }
 
+// lookupAllRecordsForDomains performs the actual lookup of all records for the provided domains using the specified options and lookup function.
 func lookupAllRecordsForDomains(domains []string, opts BatchLookupOptions, lookupFn lookupAllRecordsFunc, tickCh <-chan time.Time) []DomainLookupResult {
 	if len(domains) == 0 {
 		return nil
