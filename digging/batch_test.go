@@ -141,3 +141,28 @@ func TestLookupAllRecordsForDomainsCapturesErrorsPerDomain(t *testing.T) {
 		t.Fatalf("expected failed lookup to have no records, got %#v", results[1].Records)
 	}
 }
+
+func TestLookupAllRecordsForDomainsTimesOutPerDomain(t *testing.T) {
+	domains := []string{"slow.example"}
+
+	results := lookupAllRecordsForDomains(domains, BatchLookupOptions{
+		MaxConcurrentLookups: 1,
+		StartInterval:        0,
+		LookupTimeout:        25 * time.Millisecond,
+	}, func(domain string) (*Records, error) {
+		time.Sleep(100 * time.Millisecond)
+		return &Records{Domain: domain}, nil
+	}, nil)
+
+	if len(results) != 1 {
+		t.Fatalf("expected 1 result, got %d", len(results))
+	}
+
+	if results[0].Err == nil {
+		t.Fatal("expected slow lookup to time out")
+	}
+
+	if results[0].Records != nil {
+		t.Fatalf("expected timed out lookup to have no records, got %#v", results[0].Records)
+	}
+}
