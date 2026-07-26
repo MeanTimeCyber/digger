@@ -3,10 +3,7 @@ package main
 import (
 	"flag"
 	"fmt"
-	"net"
-	"net/url"
 	"os"
-	"strings"
 	"time"
 
 	"github.com/MeanTimeCyber/digger/digging"
@@ -14,29 +11,50 @@ import (
 )
 
 func main() {
+	// define and parse command line args
 	var domains domainList
+	var domainList string
 	var markdown bool
 	var maxConcurrentLookups int
 	var startInterval time.Duration
+
 	flag.Var(&domains, "i", "Input domain to look up (repeat the flag or separate values with commas)")
+	flag.StringVar(&domainList, "l", "", "Input file containing domains to look up (one per line)")
 	flag.BoolVar(&markdown, "m", false, "Also write output to a markdown file")
 	flag.IntVar(&maxConcurrentLookups, "c", 4, "Maximum number of lookups to run at once")
 	flag.DurationVar(&startInterval, "interval", 250*time.Millisecond, "Delay between starting each lookup")
 	flag.Parse()
 
-	if len(domains) == 0 {
-		fmt.Println("No domain provided. Use -i to specify one or more domains.")
+	// lookup domains from command line or file
+	if len(domains) != 0 {
+		fmt.Printf("Looking up %d domains\n", len(domains))
+		lookupDomains(domains, markdown, maxConcurrentLookups, startInterval)
+	} else if domainList != "" {
+		var err error
+		domains, err = readDomainsFromFile(domainList)
+
+		if err != nil {
+			fmt.Printf("Error reading domains from file %q: %s\n", domainList, err.Error())
+			os.Exit(-1)
+		}
+
+		fmt.Printf("Read %d domains from file %q\n", len(domains), domainList)
+		lookupDomains(domains, markdown, maxConcurrentLookups, startInterval)
+	} else {
+		fmt.Println("No domain provided. Use -i to specify one or more domains, or -l to specify an input file.")
 		flag.Usage()
 		os.Exit(-1)
 	}
 
-	lookupDomains(domains, markdown, maxConcurrentLookups, startInterval)
-
 	fmt.Println("Fin.")
 }
 
+// lookupDomains looks up all records for the provided domains and prints the results to stdout.
+// If markdown is true, it also writes the results to a markdown file.
 func lookupDomains(domains []string, markdown bool, maxConcurrentLookups int, startInterval time.Duration) {
+	// Clean and validate domains
 	cleanedDomains := make([]string, 0, len(domains))
+	
 	for _, domain := range domains {
 		host, _ := getHostFromURL(domain)
 
@@ -49,9 +67,11 @@ func lookupDomains(domains []string, markdown bool, maxConcurrentLookups int, st
 	}
 
 	if len(cleanedDomains) == 0 {
+		fmt.Println("No clean domains to process")
 		os.Exit(-1)
 	}
 
+	// Lookup all records for the cleaned domains
 	results, err := digging.LookupAllRecordsForDomains(cleanedDomains, digging.BatchLookupOptions{
 		MaxConcurrentLookups: maxConcurrentLookups,
 		StartInterval:        startInterval,
@@ -61,6 +81,7 @@ func lookupDomains(domains []string, markdown bool, maxConcurrentLookups int, st
 		os.Exit(-1)
 	}
 
+	// Print results
 	for _, result := range results {
 		if result.Err != nil {
 			fmt.Printf("Error looking up domain %q: %s\n", result.Domain, result.Err.Error())
@@ -83,47 +104,4 @@ func lookupDomains(domains []string, markdown bool, maxConcurrentLookups int, st
 			fmt.Printf("Saved markdown output to %q\n", markdownFile)
 		}
 	}
-}
-
-type domainList []string
-
-func (d *domainList) String() string {
-	return strings.Join(*d, ",")
-}
-
-func (d *domainList) Set(value string) error {
-	for _, part := range strings.Split(value, ",") {
-		trimmed := strings.TrimSpace(part)
-		if trimmed == "" {
-			continue
-		}
-
-		*d = append(*d, trimmed)
-	}
-
-	return nil
-}
-
-func getHostFromURL(line string) (string, error) {
-	hostname, err := url.Parse(line)
-
-	if err != nil {
-		return "", err
-	}
-
-	// trim www
-	host := strings.TrimPrefix(hostname.Host, "www.")
-
-	if len(host) == 0 {
-		host = hostname.Path
-	}
-
-	// trim port
-	noPort, _, err := net.SplitHostPort(host)
-
-	if err == nil {
-		host = noPort
-	}
-
-	return host, nil
 }
