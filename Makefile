@@ -1,2 +1,2 @@
 default:
-	go build -ldflags "-s -w" -o digger cli/main.go
+	go build -ldflags "-s -w" -o digger cli/*.go
