@@ -12,7 +12,18 @@ import (
 
 var httpGetFunc = http.Get
 
+// LookupAllRecordsForDomain looks up all DNS records for the given domain using the provided DNS client.
+// If no client is provided, it creates a default one. It returns a Records struct containing the results.
 func LookupAllRecordsForDomain(domain string, client *dnsx.DNSX) (*Records, error) {
+	if client == nil {
+		var err error
+		client, err = getDefaultClient()
+
+		if err != nil {
+			return nil, fmt.Errorf("could not create DNS client: %w", err)
+		}
+	}
+
 	return lookupAllRecordsForDomain(domain, client, client, getMTAPolicy)
 }
 
