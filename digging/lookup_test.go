@@ -7,6 +7,8 @@ import (
 	"strings"
 	"testing"
 
+	miekgdns "github.com/miekg/dns"
+	"github.com/projectdiscovery/dnsx/libs/dnsx"
 	retryabledns "github.com/projectdiscovery/retryabledns"
 )
 
@@ -151,5 +153,36 @@ func TestGetMTAPolicyUsesHTTPGetterAndTrimsBody(t *testing.T) {
 
 	if policy != "version: STSv1\nmode: enforce" {
 		t.Fatalf("unexpected policy body: %q", policy)
+	}
+}
+
+func TestGetTXTClientForUsesTXTAndPreservesDNSOptions(t *testing.T) {
+	client, err := dnsx.New(dnsx.Options{
+		QuestionTypes: []uint16{miekgdns.TypeA, miekgdns.TypeAAAA},
+		BaseResolvers: []string{"127.0.0.1:53"},
+		MaxRetries:    2,
+		QueryAll:      true,
+	})
+	if err != nil {
+		t.Fatalf("could not create source DNS client: %v", err)
+	}
+
+	txtClient, err := getTXTClientFor(client)
+	if err != nil {
+		t.Fatalf("could not create TXT DNS client: %v", err)
+	}
+
+	if len(txtClient.Options.QuestionTypes) != 1 || txtClient.Options.QuestionTypes[0] != miekgdns.TypeTXT {
+		t.Fatalf("unexpected TXT question types: %#v", txtClient.Options.QuestionTypes)
+	}
+	if txtClient.Options.MaxRetries != client.Options.MaxRetries {
+		t.Fatalf("expected MaxRetries %d, got %d", client.Options.MaxRetries, txtClient.Options.MaxRetries)
+	}
+	if txtClient.Options.QueryAll != client.Options.QueryAll {
+		t.Fatalf("expected QueryAll %t, got %t", client.Options.QueryAll, txtClient.Options.QueryAll)
+	}
+	if len(txtClient.Options.BaseResolvers) != len(client.Options.BaseResolvers) ||
+		txtClient.Options.BaseResolvers[0] != client.Options.BaseResolvers[0] {
+		t.Fatalf("unexpected BaseResolvers: %#v", txtClient.Options.BaseResolvers)
 	}
 }

@@ -25,8 +25,13 @@ func LookupAllRecordsForDomain(domain string, client *dnsx.DNSX) (*Records, erro
 		}
 	}
 
+	txtClient, err := getTXTClientFor(client)
+	if err != nil {
+		return nil, fmt.Errorf("could not create TXT DNS client: %w", err)
+	}
+
 	// Lookup all records for the domain
-	return lookupAllRecordsForDomain(domain, client, client, getMTAPolicy)
+	return lookupAllRecordsForDomain(domain, client, txtClient, getMTAPolicy)
 }
 
 type queryMultipleClient interface {
@@ -78,14 +83,15 @@ func lookupAllRecordsForDomain(domain string, queryClient queryMultipleClient, t
 	records.TXT = queryResult.TXT
 	records.PTR = queryResult.PTR
 
+	// lookup DMARC record
 	dmarcPath := "_dmarc." + domain
-	cnameResult, err := txtClient.QueryOne(dmarcPath)
+	dmarcResult, err := txtClient.QueryOne(dmarcPath)
 
 	if err != nil {
 		return nil, fmt.Errorf("could not query TXT for %q: %w", dmarcPath, err)
 	}
 
-	records.DMARC = cnameResult.TXT
+	records.DMARC = dmarcResult.TXT
 
 	// Lookup MTA-STS record separately
 	mtaSTSPath := "_mta-sts." + domain

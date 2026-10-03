@@ -30,20 +30,17 @@ func getDefaultClient() (*dnsx.DNSX, error) {
 }
 
 func getTXTClient() (*dnsx.DNSX, error) {
-	// Create DNS Resolver with default options
-	dnsClient, err := dnsx.New(
-		dnsx.Options{
-			QuestionTypes: []uint16{
-				miekgdns.TypeTXT,
-			},
-			MaxRetries:    dnsx.DefaultOptions.MaxRetries,
-			BaseResolvers: dnsx.DefaultResolvers,
-		},
-	)
+	return getTXTClientWithOptions(dnsx.Options{
+		MaxRetries:    dnsx.DefaultOptions.MaxRetries,
+		BaseResolvers: dnsx.DefaultResolvers,
+	})
+}
 
-	if err != nil {
-		return nil, err
-	}
+func getTXTClientFor(client *dnsx.DNSX) (*dnsx.DNSX, error) {
+	return getTXTClientWithOptions(*client.Options)
+}
 
-	return dnsClient, nil
+func getTXTClientWithOptions(options dnsx.Options) (*dnsx.DNSX, error) {
+	options.QuestionTypes = []uint16{miekgdns.TypeTXT}
+	return dnsx.New(options)
 }
